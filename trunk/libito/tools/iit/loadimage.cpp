@@ -54,6 +54,18 @@ char* GetSupportedFormats()
 	return str;
 }
 
+char* uppercase(char* str)
+{
+	char val = 'A'-'a';
+	uint32 len = strlen(str);
+	uint32 i;
+
+	for(i=0; i < len; i++)
+		str[i] += val;
+
+	return str;
+}
+
 bool LoadImage(Image* image, char* filename)
 {
 	char ext[32];
@@ -81,7 +93,7 @@ bool LoadImage(Image* image, char* filename)
 //	if(!strcasecmp(ext, "TIF") || !strcasecmp(ext, "TIFF") ) return LoadTIFF(image, filename);
 
 	if(i)
-		printf("Error: Image type %s not supported\n",  strupr(ext));
+		printf("Error: Image type %s not supported\n",  uppercase(ext));
 	else
 		printf("Error: '%s' has no extension\n", filename);
 
