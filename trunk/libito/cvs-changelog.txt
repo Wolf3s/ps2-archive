@@ -1,0 +1,6 @@
+Please list the changes you have made
+
+libito 1.0.0
+=============================================================
+- Commited source to cvs - Lukasz
+

@@ -1,0 +1,16 @@
+Todo list for libito, for cvs only.
+
+- Not done
++ Done
+| Work in progress
+
+Todo for libito 1.0.0 release
+===============================================================================
+- Add png, jpeg and tiff support to iit
+- BitmapFont, Fontm classes. BitmapFont loads font created by bitmap font builder
+- All functions return true or false instead of u32, unless they are wrapper functions
+- Write docs and finish/cleanup libref
+- Code all samples listed in samples/samples.txt
+- Add cleanup and add remaining functions to Vu0Math.cpp. Only use registers
+  $vfX to $vfX+n
+- Add primitives of type -Strip and -Fan to GifPipe.cpp
