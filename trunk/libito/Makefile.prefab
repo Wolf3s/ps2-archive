@@ -25,7 +25,7 @@ EE_LIBS += -L$(LIBITO)/lib -L$(PS2SDK)/ee/lib -lgcc -lito -lc -lkernel -lsyscall
 
 # packed: $(EE_BIN_PACKED)
 	
-PS2_IP = 192.168.0.10
+# PS2_IP = 192.168.0.10
 
 run: $(EE_BIN)
 	ps2client -h $(PS2_IP) reset
