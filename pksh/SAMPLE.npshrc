@@ -1,5 +1,0 @@
-verbose = no
-debug = no
-histfile = /home/<user>/.pksh_hist
-path = /some/dir:/apa/dir:/banan/dir
-home = /leet/ps2/code
