@@ -54,9 +54,5 @@ $(EE_BIN) : $(EE_OBJS) $(PS2SDK)/ee/startup/obj/crt0.o
 	$(EE_CC) -mno-crt0 -T$(PS2SDK)/ee/startup/src/linkfile $(EE_LDFLAGS) \
 		-o $(EE_BIN) $(PS2SDK)/ee/startup/obj/crt0.o $(EE_OBJS) $(EE_LIBS)
 
-$(EE_LIB) : $(EE_OBJS) $(EE_LIB:%.a=%.erl)
+$(EE_LIB) : $(EE_OBJS)
 	$(EE_AR) cru $(EE_LIB) $(EE_OBJS)
-
-$(EE_LIB:%.a=%.erl) : $(EE_OBJS)
-	$(EE_CC) -mno-crt0 -Wl,-r -o $(EE_LIB:%.a=%.erl) $(EE_OBJS)
-	$(EE_STRIP) --strip-unneeded -R .mdebug.eabi64 -R .reginfo -R .comment $(EE_LIB:%.a=%.erl)

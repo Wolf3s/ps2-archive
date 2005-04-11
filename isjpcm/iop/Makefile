@@ -25,10 +25,13 @@ all: $(IOP_OBJS_DIR) $(IOP_BIN_DIR) $(IOP_BIN) builtin
 
 builtin:
 	$(BIN2S) $(IOP_BIN) $(IOP_BIN_DIR)isjpcmIrx.S isjpcmIrx
-	
+
 clean:
 	rm -f -r $(IOP_OBJS_DIR) $(IOP_BIN_DIR)
 
+install:
+	mkdir -p $(PS2DEV)/isjpcm/bin
+	cp $(IOP_BIN) $(PS2DEV)/isjpcm/bin
+
 include $(PS2SDK)/Defs.make
 include ./Rules.make
-include ./Rules.release
