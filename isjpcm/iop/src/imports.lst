@@ -29,6 +29,7 @@ I_memset
 sysclib_IMPORTS_end
 
 sifcmd_IMPORTS_start
+I_sceSifSendCmd
 I_sceSifInitRpc
 I_sceSifRegisterRpc
 I_sceSifSetRpcQueue
