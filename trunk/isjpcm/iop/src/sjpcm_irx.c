@@ -39,6 +39,9 @@
 #define MODNAME "iSjPCM"
 #define M_PRINTF(format, args...)	printf(MODNAME ": " format, ## args)
 
+#define BLOCKSIZE 960
+static unsigned int numblocks = 20;
+
 // LIBSD defines
 #define SD_CORE_1		1
 #define SD_INIT_COLD		0
@@ -66,6 +69,10 @@
 #define SJPCM_QUIT	0x08
 #define SJPCM_GETAVAIL  0x09
 #define SJPCM_GETBUFFD  0x10
+#define SJPCM_SETNUMBLOCKS    0x11
+#define SJPCM_SETTHRESHOLD    0x12
+
+#define SJPCM_CALLBACK                0x12
 
 #define TH_C		0x02000000
 
@@ -90,6 +97,8 @@ void* SjPCM_Setvol(unsigned int* sbuff);
 void* SjPCM_Clearbuff();
 void* SjPCM_Available(unsigned int* sbuff);
 void* SjPCM_Buffered(unsigned int* sbuff);
+void* SjPCM_SetNumBlocks(unsigned int* sbuff);
+void* SjPCM_SetThreshold(unsigned int* sbuff);
 void* SjPCM_Quit();
 
 extern void wmemcpy(void *dest, void *src, int numwords);
@@ -118,6 +127,9 @@ int play_tid = 0;
 int intr_state;
 
 int SyncFlag;
+
+unsigned int threshold = 10;
+char cmdData[16];
 
 int _start ()
 {
@@ -186,6 +198,10 @@ void* SjPCM_rpc_server(unsigned int fno, void *data, int size)
 			return SjPCM_Available((unsigned*)data);
 		case SJPCM_GETBUFFD:
 			return SjPCM_Buffered((unsigned*)data);
+		case SJPCM_SETNUMBLOCKS:
+			return SjPCM_SetNumBlocks((unsigned*)data);
+		case SJPCM_SETTHRESHOLD:
+			return SjPCM_SetThreshold((unsigned*)data);
 	}
 
 	return NULL;
@@ -196,10 +212,10 @@ void* SjPCM_Clearbuff()
 	CpuSuspendIntr(&intr_state);
 
 	memset(spubuf,0,0x800);
-	memset(pcmbufl,0,960*2*20);
-	memset(pcmbufr,0,960*2*20);
-	memset(tempPCMbufl,0,960*2);
-	memset(tempPCMbufr,0,960*2);
+	memset(pcmbufl,0,BLOCKSIZE*2*numblocks);
+	memset(pcmbufr,0,BLOCKSIZE*2*numblocks);
+	memset(tempPCMbufl,0,BLOCKSIZE*2);
+	memset(tempPCMbufr,0,BLOCKSIZE*2);
 
 	CpuResumeIntr(intr_state);
 	
@@ -263,16 +279,16 @@ void* SjPCM_Init(unsigned int* sbuff)
 	// Allocate memory
 	if(!memoryAllocated)
 	{
-		pcmbufl = malloc(960*2*20);
-		tempPCMbufl = malloc(960*2);
+		pcmbufl = malloc(BLOCKSIZE*2*numblocks);
+		tempPCMbufl = malloc(BLOCKSIZE*2);
 		if ((pcmbufl == NULL) || (tempPCMbufl == NULL)) {
 			#ifndef NOPRINT
 			M_PRINTF("Failed to allocate memory for sound buffer!\n");
 			#endif
 			ExitDeleteThread();
 		}
-		pcmbufr = malloc(960*2*20);
-		tempPCMbufr = malloc(960*2);
+		pcmbufr = malloc(BLOCKSIZE*2*numblocks);
+		tempPCMbufr = malloc(BLOCKSIZE*2);
 		if((pcmbufr == NULL) || (tempPCMbufr == NULL)){
 			#ifndef NOPRINT
 			M_PRINTF("Failed to allocate memory for sound buffer!\n");
@@ -294,10 +310,10 @@ void* SjPCM_Init(unsigned int* sbuff)
 		memoryAllocated = 1;
 	}
 
-	memset(pcmbufl,0,960*2*20);
-	memset(pcmbufr,0,960*2*20);
-	memset(tempPCMbufl,0,960*2);
-	memset(tempPCMbufr,0,960*2);
+	memset(pcmbufl,0,BLOCKSIZE*2*numblocks);
+	memset(pcmbufr,0,BLOCKSIZE*2*numblocks);
+	memset(tempPCMbufl,0,BLOCKSIZE*2);
+	memset(tempPCMbufr,0,BLOCKSIZE*2);
 	memset(spubuf,0,0x800);
 
 	#ifndef NOPRINT
@@ -364,7 +380,7 @@ void* SjPCM_Init(unsigned int* sbuff)
 void SjPCM_PlayThread(void* param)
 {
 	int which;
-
+	
 	while(1) {
 
 		WaitSema(transfer_sema);
@@ -378,7 +394,15 @@ void SjPCM_PlayThread(void* param)
 		wmemcpy(spubuf+(1024*which)+512,pcmbufr+readpos,512);	// right
 
 		readpos += 512;
-		if(readpos >= (960*2*20)) readpos = 0;
+		if(readpos >= (BLOCKSIZE*2*numblocks)) readpos = 0;
+		
+		{
+			unsigned int rp = readpos, wp = writepos;
+			if (wp<rp) wp+=BLOCKSIZE*2*numblocks;
+			if ((wp-rp) < (threshold*BLOCKSIZE)) {
+				sceSifSendCmd(SJPCM_CALLBACK, cmdData, 16, NULL, NULL, 0);
+			}
+		}
 
 		CpuResumeIntr(intr_state);
 
@@ -463,10 +487,10 @@ void* SjPCM_Enqueue(unsigned int* sbuff)
 
 	// compute next writepos
 	writepos += sample_size * 2;
-	if(writepos >= (960*2*20)) writepos = 0;
+	if(writepos >= (BLOCKSIZE*2*numblocks)) writepos = 0;
 
 	if(SyncFlag)
-		if(writepos == (960*2*10)) readpos = 0x2400;
+		if(writepos == (BLOCKSIZE*numblocks)) readpos = 0x2400;
 
 	//sbuff[3] = writepos;
 	// it's not used on the EE side anyway
@@ -486,17 +510,37 @@ static int SjPCM_TransCallback(void* param)
 void* SjPCM_Available(unsigned int* sbuff)
 {
   unsigned int rp = readpos, wp = writepos;
-  if (wp<rp) wp+=960*2*20;
-  sbuff[3] = (960*2*20-(wp-rp))/4;
+  if (wp<rp) wp+=BLOCKSIZE*2*numblocks;
+  sbuff[3] = (BLOCKSIZE*2*numblocks-(wp-rp))/4;
   return sbuff;
 }
 
 void* SjPCM_Buffered(unsigned int* sbuff)
 {
   unsigned int rp = readpos, wp = writepos;
-  if (wp<rp) wp+=960*2*20;
+  if (wp<rp) wp+=BLOCKSIZE*2*numblocks;
   sbuff[3] = (wp-rp)/4;
   return sbuff;
+}
+
+void* SjPCM_SetNumBlocks(unsigned int* sbuff)
+{
+        if (pcmbufl) {
+	        #ifndef NOPRINT
+	        M_PRINTF("Failed to set number of buffers: SjPCM_Init already called!\n");
+	        #endif
+	        ExitDeleteThread();
+        }
+	
+	numblocks = *sbuff;
+	threshold = numblocks / 2;
+	return sbuff;
+}
+
+void* SjPCM_SetThreshold(unsigned int* sbuff)
+{
+	threshold = *sbuff;
+	return sbuff;
 }
 
 void* SjPCM_Quit(unsigned int* sbuff)
@@ -510,5 +554,4 @@ void* SjPCM_Quit(unsigned int* sbuff)
 	DeleteSema(transfer_sema);
 
 	return sbuff;
-
 }

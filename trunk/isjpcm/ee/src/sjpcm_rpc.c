@@ -21,10 +21,13 @@
 
 #include <tamtypes.h>
 #include <kernel.h>
+#include <fileio.h>
 #include <sifrpc.h>
 #include <stdarg.h>
 #include <string.h>
 #include "sjpcm.h"
+
+#define SJPCM_CALLBACK          0x12
 
 static unsigned sbuff[64] __attribute__((aligned (64)));
 static struct t_SifRpcClientData cd0;
@@ -32,6 +35,12 @@ static struct t_SifRpcClientData cd0;
 int sjpcm_inited = 0;
 int pcmbufl, pcmbufr;
 int bufpos;
+
+void (*_cb)(void);
+
+static void _sjpcm_callback(void *pkt, void *param) {
+    if (_cb) _cb();
+}
 
 void SjPCM_Puts(char *format, ...)
 {
@@ -105,6 +114,43 @@ int SjPCM_Init(int sync)
 	pcmbufr = sbuff[2];
 	bufpos = sbuff[3];
 
+        DIntr();
+        SifAddCmdHandler(SJPCM_CALLBACK, _sjpcm_callback, NULL);
+        EIntr();
+
+	sjpcm_inited = 1;
+
+	return 0;
+}
+
+int SjPCM_InitEx(int sync, int num_blocks) {
+	int i;
+
+	while(1){
+		if (SifBindRpc( &cd0, SJPCM_IRX, 0) < 0) return -1; // bind error
+ 		if (cd0.server != 0) break;
+    		i = 0x10000;
+    		while(i--);
+	}
+	
+	sbuff[0] = num_blocks;
+	
+	SifCallRpc(&cd0,SJPCM_SETNUMBLOCKS,0,(void*)(&sbuff[0]),64,(void*)(&sbuff[0]),64,0,0);
+
+	sbuff[0] = sync;
+
+	SifCallRpc(&cd0,SJPCM_INIT,0,(void*)(&sbuff[0]),64,(void*)(&sbuff[0]),64,0,0);
+
+	FlushCache(0);
+
+	pcmbufl = sbuff[1];
+	pcmbufr = sbuff[2];
+	bufpos = sbuff[3];
+	
+        DIntr();
+        SifAddCmdHandler(SJPCM_CALLBACK, _sjpcm_callback, NULL);
+        EIntr();
+
 	sjpcm_inited = 1;
 
 	return 0;
@@ -156,6 +202,14 @@ int SjPCM_Buffered()
   if (!sjpcm_inited) return -1;
   SifCallRpc(&cd0,SJPCM_GETBUFFD,0,(void*)(&sbuff[0]),64,(void*)(&sbuff[0]),64,0,0);
   return sbuff[3];
+}
+
+void SjPCM_SetCallback(unsigned int threshold, void (*cb)(void))
+{
+  if (!sjpcm_inited) return;
+  sbuff[0] = threshold;
+  SifCallRpc(&cd0,SJPCM_SETTHRESHOLD,0,(void*)(&sbuff[0]),64,(void*)(&sbuff[0]),64,0,0);
+  _cb = cb;
 }
 
 void SjPCM_Quit()
