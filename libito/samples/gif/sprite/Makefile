@@ -1,5 +1,5 @@
 
-EE_BIN = alphablend.elf
+EE_BIN = sprite.elf
 EE_OBJS = main.o
 
 all : $(EE_BIN) 

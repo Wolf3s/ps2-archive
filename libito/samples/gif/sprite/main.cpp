@@ -22,21 +22,18 @@ int main()
 	
 	Gif.SetupEnv(RGBA16, ScreenWidth, ScreenHeight, 2, VMODE_AUTO, FIELD, ENABLE, ScreenX, ScreenY);
 
-	Gif.AlphaBlending(0);
+	u32 x = 0;
 
 	while(1)
 	{
 		Gif.SetNextDrawbuffer();	
 		
-		Gif.PrimAlphaBlend(false);
 		Gif.ClearScreen();
-		Gif.PrimAlphaBlend(true);
+		Gif.Sprite(RGB(0xFF-x,0xFF-x,0xFF), 64 + x, 64, 128 + x, 128);
 		
 
-		Gif.Sprite(RGBA(0,0,0xFF, 0x80), 64, 64, 128, 128);
+		x = (x+4) % 255;
 	
-		Gif.Sprite(RGBA(0xFF,0,0, 0x40), 96, 96, 160, 160);
-
 		Gif.Send();
 	}
 
