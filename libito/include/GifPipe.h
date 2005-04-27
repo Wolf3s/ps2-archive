@@ -73,7 +73,7 @@ class Ito::GifPipe: public GsDriver
 		void PrimShading(u32 shading);
 		/** Enable/disable primitive alpablending 
 			\param enable true to enable, false to disable.	*/
-		void PrimAlpaBlend(bool enable);
+		void PrimAlphaBlend(bool enable);
 		/** Enable/disable primitive antialiasing. 
 			\param enable true to enable, false to disable. */
 		void PrimAntialias(bool enable);
