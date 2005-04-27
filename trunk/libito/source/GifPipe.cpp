@@ -210,11 +210,13 @@ void GifPipe::PrimShading(u32 shading)
 }
 #endif
 
-#ifdef F_PrimAlpaBlend
-void PrimAlpaBlend(bool enable)
+#ifdef F_PrimAlphaBlend
+void GifPipe::PrimAlphaBlend(bool enable)
 {
-
-
+	if(enable)
+		m_PrimMode |= PRIM_ALPHABLEND;
+	else
+		m_PrimMode &= ~PRIM_ALPHABLEND;
 }
 #endif
 
@@ -281,7 +283,7 @@ void GifPipe::SetRegister(u64 address, u64 data)
 #ifdef F_AlphaBlending2
 bool GifPipe::AlphaBlending(u32 mode)
 {
-	uint32 a=0,b=0,c=0,fix=0;
+	u32 a=0,b=0,c=0,d=0,fix=0;
 
 	switch(mode)
 	{
@@ -306,7 +308,7 @@ bool GifPipe::AlphaBlending(u32 mode)
 			c = ALPHA_FIXED;
 			d = ALPHA_ZERO;
 			fix = 0x80;
-		break:
+		break;
 		
 		case AlphaBlendLighten:
 			a = ALPHA_COLOR_DST;

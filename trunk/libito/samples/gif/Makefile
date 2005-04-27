@@ -1,5 +1,5 @@
 
-SUBDIRS = $(sort textureformats sprite point indirectfb)
+SUBDIRS = $(sort alphablending textureformats sprite point indirectfb)
 
 all: $(patsubst %, _dir_%, $(SUBDIRS)) 
 

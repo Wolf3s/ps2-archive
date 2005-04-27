@@ -46,7 +46,8 @@ GSDRIVER_OBJS := $(GSDRIVER_OBJS:%=$(EE_OBJS_DIR)GsDriver_%)
 
 GIFPIPE_OBJS  = Constructor.o Constructor2.o Destructor.o Line4.o Triangle4.o Sprite4.o ClearScreen.o Send.o Finish.o CheckPacket.o
 GIFPIPE_OBJS += GifVRHandler.o Point4.o AlphaBlending.o AlphaTest.o ZTest.o SetRegister.o SetTexture.o LoadImageBuffer.o LoadImageFile.o
-GIFPIPE_OBJS += UploadTexture.o TextureSprite.o TextureSprite2.o PrimAntialias.o PrimShading.o SetNextDrawBuffer.o
+GIFPIPE_OBJS += UploadTexture.o TextureSprite.o TextureSprite2.o PrimAntialias.o PrimShading.o SetNextDrawBuffer.o PrimAlphaBlend.o 
+GIFPIPE_OBJS += AlphaBlending2.o
 GIFPIPE_OBJS := $(GIFPIPE_OBJS:%=$(EE_OBJS_DIR)GifPipe_%)
 
 GS_OBJS =  SetBGCOLOR.o SetPMODE.o SetSMODE2.o SetDISPFB1.o SetDISPFB2.o SetDISPLAY1.o SetDISPLAY2.o TextureBufferBase.o
