@@ -6,6 +6,8 @@
 #include "exoquant.h"
 #include "swizzle.h"
 
+extern char* uppercase(char* str);
+
 // IIF v1 - Ito Image Format
 typedef struct{
 	uint32 identifier; // 'IIF1' - IIFv (v = version of iif)
@@ -589,7 +591,7 @@ bool SaveIIF(char* filename, Image *image, uint32 psm, uint32 options)
 				if(clear) header.name[i] = 0;
 			}
 			
-			strupr(header.name);
+			uppercase(header.name);
 			header.name[sizeof(header.name)-1] = 0;
 
 			fseek(fpIIF, 0, SEEK_SET);

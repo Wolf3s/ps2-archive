@@ -15,7 +15,7 @@ all : $(BIN)
 	gcc $(CFLAGS) $< -o $@
 
 $(BIN): $(OBJS)
-	gcc -o $(BIN) $(OBJS) $(LDFLAGS)
+	g++ -o $(BIN) $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -f $(OBJS) $(BIN)*

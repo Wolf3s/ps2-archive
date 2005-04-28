@@ -20,6 +20,8 @@ typedef char			int8;
 typedef short			int16;			
 typedef int				int32;
 
+
+
 #ifdef DEBUG
 	#define dprintf(format, args...) printf("DEBUG "format, ## args)
 #else

@@ -185,3 +185,17 @@ int32 main(int32 argc, char *argv[])
 
 	return 0;
 }
+
+
+char* uppercase(char* str)
+{
+	char val = 'A'-'a';
+	uint32 len = strlen(str);
+	uint32 i;
+
+	for(i=0; i < len; i++)
+		str[i] += val;
+
+	return str;
+}
+
