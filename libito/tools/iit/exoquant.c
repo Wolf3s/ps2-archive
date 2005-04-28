@@ -24,7 +24,11 @@ SOFTWARE.
 
 #include "exoquant.h"
 #include "types.h"
-#include <malloc.h>
+
+#include <stdlib.h> 
+#ifdef HAVE_MALLOC_H 
+#include <malloc.h> 
+#endif 
 #include <math.h>
 
 #ifdef _MSC_VER /* the stupid vc7 math.h doesn't define sqrtf for C on x86 */

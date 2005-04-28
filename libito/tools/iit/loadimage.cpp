@@ -4,6 +4,7 @@
 #include "loadimage.h"
 #include "types.h"
 
+extern char* uppercase(char* str);
 
 // --------------------------------------------------------
 // PNG
@@ -51,18 +52,6 @@ char* GetSupportedFormats()
 		sprintf(str, "%s, %s", str, SupportedFormats[i]);
 	}
 	
-	return str;
-}
-
-char* uppercase(char* str)
-{
-	char val = 'A'-'a';
-	uint32 len = strlen(str);
-	uint32 i;
-
-	for(i=0; i < len; i++)
-		str[i] += val;
-
 	return str;
 }
 
