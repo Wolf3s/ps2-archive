@@ -1,3 +1,10 @@
+ifeq (x$(LIBITO), x)
+  export LIBITO=$(shell pwd)
+endif
+
+ifeq (x$(LIBITO_BIN), x)
+  export LIBITO_BIN=$(PS2DEV)/libito
+endif
 
 LIBITO_VERSION = 1.0.0
 
@@ -41,3 +48,9 @@ src-release: clean
 	rm -f -r release/include/
 	echo Creating libito-$(LIBITO_VERSION)-src.tar.gz
 	tar -zcf libito-$(LIBITO_VERSION)-src.tar.gz docs/ doxygen/ include/ lib/ release/ samples/ source/ tools/ Makefile Makefile.global MakeFile.prefab
+
+install:
+	mkdir -p $(LIBITO_BIN)/lib $(LIBITO_BIN)/include $(LIBITO_BIN)/bin
+	cp include/*.h $(LIBITO_BIN)/include
+	cp lib/*.a $(LIBITO_BIN)/lib
+	cp tools/iit/iit* $(LIBITO_BIN)/bin
