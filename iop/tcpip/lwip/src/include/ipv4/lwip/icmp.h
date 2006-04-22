@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -37,6 +37,7 @@
 #include "lwip/opt.h"
 #include "lwip/pbuf.h"
 
+#include "lwip/ip_addr.h"
 #include "lwip/netif.h"
 
 #define ICMP_ER 0      /* echo reply */

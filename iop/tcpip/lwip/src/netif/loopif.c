@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -43,8 +43,6 @@
 #include "lwip/tcp.h"
 #include "lwip/ip.h"
 
-#include "sysclib.h"
-
 static void
 loopif_input( void * arg )
 {
@@ -60,7 +58,7 @@ loopif_output(struct netif *netif, struct pbuf *p,
        struct ip_addr *ipaddr)
 {
   struct pbuf *q, *r;
-  char *ptr;
+  u8_t *ptr;
   void **arg;
 
 #if defined(LWIP_DEBUG) && defined(LWIP_TCPDUMP)

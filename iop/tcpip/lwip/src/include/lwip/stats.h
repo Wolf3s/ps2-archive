@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -142,6 +142,13 @@ void stats_init(void);
 #define LINK_STATS_INC(x) STATS_INC(x)
 #else
 #define LINK_STATS_INC(x)
+#endif
+
+/* Display of statistics */
+#if LWIP_STATS_DISPLAY
+void stats_display(void);
+#else
+#define stats_display()
 #endif
 
 #endif /* __LWIP_STATS_H__ */

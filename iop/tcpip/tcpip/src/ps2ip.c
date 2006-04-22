@@ -22,8 +22,8 @@
 #include <thevent.h>
 #include <libsd.h>
 #include <sysmem.h>
-#include <lwip/memp.h>
 
+#include <lwip/memp.h>
 #include <lwip/sys.h>
 #include <lwip/tcpip.h>
 #include <lwip/netif.h>
@@ -288,7 +288,7 @@ InputCB(void* pvArg)
 
 		//IP-packet. Update ARP table, obtain first queued packet.
 
-		pARP=etharp_ip_input(pNetIF,pInput);
+		etharp_ip_input(pNetIF,pInput);
 
 		//Skip Ethernet header.
 
@@ -300,17 +300,17 @@ InputCB(void* pvArg)
 
 		//Send out the ARP reply or ARP queued packet.
 
-		SendARPReply(pNetIF,pARP);
+		SendARPReply(pNetIF,NULL);
 		break;
 	case	ETHTYPE_ARP:
 
 		//ARP-packet. Pass pInput to ARP module, get ARP reply or ARP queued packet.
 
-		pARP=etharp_arp_input(pNetIF,(struct eth_addr*)&pNetIF->hwaddr,pInput);
+		etharp_arp_input(pNetIF,(struct eth_addr*)&pNetIF->hwaddr,pInput);
 
 		//Send out the ARP reply or ARP queued packet.
 
-		SendARPReply(pNetIF,pARP);
+		SendARPReply(pNetIF,NULL);
 		break;
 	default:
 

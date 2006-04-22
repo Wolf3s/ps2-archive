@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -204,15 +204,23 @@ struct linger {
   typedef struct fd_set {
           unsigned char fd_bits [(FD_SETSIZE+7)/8];
         } fd_set;
+
+/* 
+ * only define this in sockets.c so it does not interfere
+ * with other projects namespaces where timeval is present
+ */ 
+#ifndef LWIP_TIMEVAL_PRIVATE
+#define LWIP_TIMEVAL_PRIVATE 1
 #endif
 
-#ifndef TIMEVAL
-  #define TIMEVAL
+#if LWIP_TIMEVAL_PRIVATE
   struct timeval {
     long    tv_sec;         /* seconds */
     long    tv_usec;        /* and microseconds */
   };
-#endif 
+#endif
+
+#endif
 
 int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
 int lwip_bind(int s, struct sockaddr *name, socklen_t namelen);

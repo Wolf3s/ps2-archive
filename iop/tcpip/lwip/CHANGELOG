@@ -1,21 +1,186 @@
-TODO
+FUTURE
 
   * TODO: The lwIP source code makes some invalid assumptions on processor
     word-length, storage sizes and alignment. See the mailing lists for
-    problems with exoteric architectures showing these problems.
-    We still have to fix this neatly.
+    problems with exoteric (/DSP) architectures showing these problems.
+    We still have to fix some of these issues neatly.
+
+  * TODO: the ARP layer is not protected against concurrent access. If
+    you run from a multitasking OS, serialize access to ARP (called from
+    your network device driver and from a timeout thread.)
+
+  * TODO: the PPP code is broken in a few ways. There are namespace
+    collisions on BSD systems and many assumptions on word-length
+    (sizeof(int)). In ppp.c an assumption is made on the availability of
+    a thread subsystem. Either PPP needs to be moved to contrib/ports/???
+    or rearranged to be more generic.
 
 HISTORY
 
-(active STABLE-0_7 branch)
+(CVS HEAD)
 
-(STABLE-0_7_1)
+  * [New changes go here]
+
+(STABLE-1_1_1)
+
+  2006-03-03  Christiaan Simons
+  * ipv4/ip_frag.c: Added bound-checking assertions on ip_reassbitmap
+    access and added pbuf_alloc() return value checks.
+
+  2006-01-01  Leon Woestenberg <leon.woestenberg@gmx.net>
+  * tcp_{in,out}.c, tcp_out.c: Removed 'even sndbuf' fix in TCP, which is
+    now handled by the checksum routine properly.
+
+  2006-02-27  Leon Woestenberg <leon.woestenberg@gmx.net>
+   * pbuf.c: Fix alignment; pbuf_init() would not work unless
+     pbuf_pool_memory[] was properly aligned. (Patch by Curt McDowell.)
+
+  2005-12-20  Leon Woestenberg <leon.woestenberg@gmx.net>
+  * tcp.c: Remove PCBs which stay in LAST_ACK state too long. Patch
+    submitted by Mitrani Hiroshi.
+    
+  2005-12-15  Christiaan Simons
+  * inet.c: Disabled the added summing routine to preserve code space.
+
+  2005-12-14  Leon Woestenberg <leon.woestenberg@gmx.net>
+  * tcp_in.c: Duplicate FIN ACK race condition fix by Kelvin Lawson.
+    Added Curt McDowell's optimized checksumming routine for future
+    inclusion. Need to create test case for unaliged, aligned, odd,
+    even length combination of cases on various endianess machines.
+
+  2005-12-09  Christiaan Simons
+  * inet.c: Rewrote standard checksum routine in proper portable C.
+
+  2005-11-25  Christiaan Simons
+  * udp.c tcp.c: Removed SO_REUSE hack. Should reside in socket code only.
+  * *.c: introduced cc.h LWIP_DEBUG formatters matching the u16_t, s16_t,
+    u32_t, s32_t typedefs. This solves most debug word-length assumes.  
+
+  2005-07-17 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * inet.c: Fixed unaligned 16-bit access in the standard checksum
+    routine by Peter Jolasson.
+  * slipif.c: Fixed implementation assumption of single-pbuf datagrams.
+
+  2005-02-04 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * tcp_out.c: Fixed uninitialized 'queue' referenced in memerr branch.
+  * tcp_{out|in}.c: Applied patch fixing unaligned access.
+
+  2005-01-04 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * pbuf.c: Fixed missing semicolon after LWIP_DEBUG statement.
+
+  2005-01-03 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * udp.c: UDP pcb->recv() was called even when it was NULL.
+
+(STABLE-1_1_0)
+
+  2004-12-28 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * etharp.*: Disabled multiple packets on the ARP queue.
+    This clashes with TCP queueing.
+
+  2004-11-28 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * etharp.*: Fixed race condition from ARP request to ARP timeout.
+    Halved the ARP period, doubled the period counts.
+    ETHARP_MAX_PENDING now should be at least 2. This prevents
+    the counter from reaching 0 right away (which would allow
+    too little time for ARP responses to be received).
+    
+  2004-11-25 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * dhcp.c: Decline messages were not multicast but unicast.
+  * etharp.c: ETHARP_CREATE is renamed to ETHARP_TRY_HARD.
+    Do not try hard to insert arbitrary packet's source address,
+    etharp_ip_input() now calls etharp_update() without ETHARP_TRY_HARD. 
+    etharp_query() now always DOES call ETHARP_TRY_HARD so that users
+    querying an address will see it appear in the cache (DHCP could
+    suffer from this when a server invalidly gave an in-use address.)
+  * ipv4/ip_addr.h: Renamed ip_addr_maskcmp() to _netcmp() as we are
+    comparing network addresses (identifiers), not the network masks
+    themselves.
+  * ipv4/ip_addr.c: ip_addr_isbroadcast() now checks that the given
+    IP address actually belongs to the network of the given interface.
+
+  2004-11-24 Kieran Mansley <kjm25@cam.ac.uk>
+  * tcp.c: Increment pcb->snd_buf when ACK is received in SYN_SENT state.
+
+(STABLE-1_1_0-RC1)
+
+  2004-10-16 Kieran Mansley <kjm25@cam.ac.uk>
+  * tcp.c: Add code to tcp_recved() to send an ACK (window update) immediately,
+	even if one is already pending, if the rcv_wnd is above a threshold
+	(currently TCP_WND/2). This avoids waiting for a timer to expire to send a
+	delayed ACK in order to open the window if the stack is only receiving data.
+
+  2004-09-12 Kieran Mansley <kjm25@cam.ac.uk>
+  * tcp*.*: Retransmit time-out handling improvement by Sam Jansen.
+
+  2004-08-20 Tony Mountifield <tony@softins.co.uk>
+  * etharp.c: Make sure the first pbuf queued on an ARP entry
+    is properly ref counted.
+
+  2004-07-27 Tony Mountifield <tony@softins.co.uk>
+  * debug.h: Added (int) cast in LWIP_DEBUGF() to avoid compiler
+    warnings about comparison.
+  * pbuf.c: Stopped compiler complaining of empty if statement
+    when LWIP_DEBUGF() empty.  Closed an unclosed comment.
+  * tcp.c: Stopped compiler complaining of empty if statement
+    when LWIP_DEBUGF() empty.
+  * ip.h Corrected IPH_TOS() macro: returns a byte, so doesn't need htons().
+  * inet.c: Added a couple of casts to quiet the compiler.
+    No need to test isascii(c) before isdigit(c) or isxdigit(c).
+
+  2004-07-22 Tony Mountifield <tony@softins.co.uk>
+  * inet.c: Made data types consistent in inet_ntoa().
+    Added casts for return values of checksum routines, to pacify compiler.
+  * ip_frag.c, tcp_out.c, sockets.c, pbuf.c
+    Small corrections to some debugging statements, to pacify compiler.
+
+  2004-07-21 Tony Mountifield <tony@softins.co.uk>
+  * etharp.c: Removed spurious semicolon and added missing end-of-comment.
+  * ethernetif.c Updated low_level_output() to match prototype for
+    netif->linkoutput and changed low_level_input() similarly for consistency.
+  * api_msg.c: Changed recv_raw() from int to u8_t, to match prototype
+    of raw_recv() in raw.h and so avoid compiler error.
+  * sockets.c: Added trivial (int) cast to keep compiler happier.
+  * ip.c, netif.c Changed debug statements to use the tidier ip4_addrN() macros.
+  
+(STABLE-1_0_0)
+
+  ++ Changes:
+
+  2004-07-05 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * sockets.*: Restructured LWIP_PRIVATE_TIMEVAL. Make sure
+    your cc.h file defines this either 1 or 0. If non-defined,
+    defaults to 1.
+  * .c: Added <string.h> and <errno.h> includes where used.
+  * etharp.c: Made some array indices unsigned.
+
+  2004-06-27 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * netif.*: Added netif_set_up()/down().
+  * dhcp.c: Changes to restart program flow.
+
+  2004-05-07 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * etharp.c: In find_entry(), instead of a list traversal per candidate, do a
+    single-pass lookup for different candidates. Should exploit locality.
+
+  2004-04-29 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * tcp*.c: Cleaned up source comment documentation for Doxygen processing.
+  * opt.h: ETHARP_ALWAYS_INSERT option removed to comply with ARP RFC.
+  * etharp.c: update_arp_entry() only adds new ARP entries when adviced to by
+    the caller. This deprecates the ETHARP_ALWAYS_INSERT overrule option.
 
   ++ Bug fixes:
 
-  * Fixed updating the ARP cache from a request pbuf that was recycled earlier for reply.
-  * Removed updating ARP cache using destination address (which is wrong for requests and
-    does not work for replies as those are unicast anyway).
+  2004-04-27 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * etharp.c: Applied patch of bug #8708 by Toni Mountifield with a solution
+    suggested by Timmy Brolin. Fix for 32-bit processors that cannot access
+    non-aligned 32-bit words, such as soms 32-bit TCP/IP header fields. Fix
+    is to prefix the 14-bit Ethernet headers with two padding bytes.
+
+  2004-04-23 Leon Woestenberg <leon.woestenberg@gmx.net>
+  * ip_addr.c: Fix in the ip_addr_isbroadcast() check.
+  * etharp.c: Fixed the case where the packet that initiates the ARP request
+    is not queued, and gets lost. Fixed the case where the packets destination
+    address is already known; we now always queue the packet and perform an ARP
+    request.
   
 (STABLE-0_7_0)
 

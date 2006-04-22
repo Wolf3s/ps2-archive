@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -39,7 +39,7 @@
 
 struct sswt_cb
 {
-    int timeflag;
+    s16_t timeflag;
     sys_sem_t *psem;
 };
 
@@ -170,10 +170,11 @@ sys_timeout(u32_t msecs, sys_timeout_handler h, void *arg)
 
   timeouts = sys_arch_timeouts();
 
-  LWIP_DEBUGF(SYS_DEBUG, ("sys_timeout: %p msecs=%lu h=%p arg=%p\n",
+  LWIP_DEBUGF(SYS_DEBUG, ("sys_timeout: %p msecs=%"U32_F" h=%p arg=%p\n",
     (void *)timeout, msecs, (void *)h, (void *)arg));
 
   LWIP_ASSERT("sys_timeout: timeouts != NULL", timeouts != NULL);
+
   if (timeouts->next == NULL) {
     timeouts->next = timeout;
     return;
@@ -186,14 +187,13 @@ sys_timeout(u32_t msecs, sys_timeout_handler h, void *arg)
   } else {
     for(t = timeouts->next; t != NULL; t = t->next) {
       timeout->time -= t->time;
-      if (t->next == NULL ||
-   t->next->time > timeout->time) {
-  if (t->next != NULL) {
-    t->next->time -= timeout->time;
-  }
-  timeout->next = t->next;
-  t->next = timeout;
-  break;
+      if (t->next == NULL || t->next->time > timeout->time) {
+        if (t->next != NULL) {
+          t->next->time -= timeout->time;
+        }
+        timeout->next = t->next;
+        t->next = timeout;
+        break;
       }
     }
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -84,19 +84,18 @@ void             udp_recv       (struct udp_pcb *pcb,
                  struct ip_addr *addr,
                  u16_t port),
          void *recv_arg);
+err_t            udp_sendto     (struct udp_pcb *pcb, struct pbuf *p, struct ip_addr *dst_ip, u16_t dst_port);
 err_t            udp_send       (struct udp_pcb *pcb, struct pbuf *p);
 
 #define          udp_flags(pcb)  ((pcb)->flags)
 #define          udp_setflags(pcb, f)  ((pcb)->flags = (f))
 
-
 /* The following functions are the lower layer interface to UDP. */
-u8_t             udp_lookup     (struct ip_hdr *iphdr, struct netif *inp);
 void             udp_input      (struct pbuf *p, struct netif *inp);
 void             udp_init       (void);
 
 #if UDP_DEBUG
-int udp_debug_print(struct udp_hdr *udphdr);
+void udp_debug_print(struct udp_hdr *udphdr);
 #else
 #define udp_debug_print(udphdr)
 #endif
