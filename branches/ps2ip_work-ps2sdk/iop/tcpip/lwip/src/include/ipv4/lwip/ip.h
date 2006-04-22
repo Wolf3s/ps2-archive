@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -40,10 +40,8 @@
 
 #include "lwip/err.h"
 
-struct netif;
 
 void ip_init(void);
-u8_t ip_lookup(void *header, struct netif *inp);
 struct netif *ip_route(struct ip_addr *dest);
 err_t ip_input(struct pbuf *p, struct netif *inp);
 err_t ip_output(struct pbuf *p, struct ip_addr *src, struct ip_addr *dest,
@@ -129,7 +127,7 @@ PACK_STRUCT_END
 
 #define IPH_V(hdr)  (ntohs((hdr)->_v_hl_tos) >> 12)
 #define IPH_HL(hdr) ((ntohs((hdr)->_v_hl_tos) >> 8) & 0x0f)
-#define IPH_TOS(hdr) (htons((ntohs((hdr)->_v_hl_tos) & 0xff)))
+#define IPH_TOS(hdr) (ntohs((hdr)->_v_hl_tos) & 0xff)
 #define IPH_LEN(hdr) ((hdr)->_len)
 #define IPH_ID(hdr) ((hdr)->_id)
 #define IPH_OFFSET(hdr) ((hdr)->_offset)

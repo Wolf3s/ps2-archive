@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -34,8 +34,8 @@
 #include "lwip/inet.h"
 
 
-int
-ip_addr_maskcmp(struct ip_addr *addr1, struct ip_addr *addr2,
+u8_t
+ip_addr_netcmp(struct ip_addr *addr1, struct ip_addr *addr2,
                 struct ip_addr *mask)
 {
   return((addr1->addr[0] & mask->addr[0]) == (addr2->addr[0] & mask->addr[0]) &&
@@ -45,7 +45,7 @@ ip_addr_maskcmp(struct ip_addr *addr1, struct ip_addr *addr2,
         
 }
 
-int
+u8_t
 ip_addr_cmp(struct ip_addr *addr1, struct ip_addr *addr2)
 {
   return(addr1->addr[0] == addr2->addr[0] &&
@@ -64,7 +64,7 @@ ip_addr_set(struct ip_addr *dest, struct ip_addr *src)
   dest->addr[3] = src->addr[3];*/
 }
 
-int
+u8_t
 ip_addr_isany(struct ip_addr *addr)
 {
   if (addr == NULL) return 1;
@@ -76,7 +76,7 @@ ip_addr_isany(struct ip_addr *addr)
 void
 ip_addr_debug_print(struct ip_addr *addr)
 {
-  printf("%lx:%lx:%lx:%lx:%lx:%lx:%lx:%lx",
+  printf("%"X32_F":%"X32_F":%"X32_F":%"X32_F":%"X32_F":%"X32_F":%"X32_F":%"X32_F",
          ntohl(addr->addr[0]) >> 16 & 0xffff,
          ntohl(addr->addr[0]) & 0xffff,
          ntohl(addr->addr[1]) >> 16 & 0xffff,

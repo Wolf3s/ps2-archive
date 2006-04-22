@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -32,14 +32,14 @@
  *
  */
 
+#include <errno.h>
+
 #include "lwip/opt.h"
 #include "lwip/api.h"
 #include "lwip/arch.h"
 #include "lwip/sys.h"
 
 #include "lwip/sockets.h"
-
-#include "sysclib.h"
 
 #define NUM_SOCKETS MEMP_NUM_NETCONN
 
@@ -86,9 +86,12 @@ static int err_to_errno_table[11] = {
     EADDRINUSE    /* ERR_USE  -10     Address in use.          */
 };
 
+#define ERR_TO_ERRNO_TABLE_SIZE \
+  (sizeof(err_to_errno_table)/sizeof(err_to_errno_table[0]))
+
 #define err_to_errno(err) \
-  ((err) < (sizeof(err_to_errno_table)/sizeof(int))) ? \
-    err_to_errno_table[-(err)] : EIO
+  (-(err) >= 0 && -(err) < ERR_TO_ERRNO_TABLE_SIZE ? \
+    err_to_errno_table[-(err)] : EIO)
 
 #ifdef ERRNO
 #define set_errno(err) errno = (err)
@@ -417,7 +420,7 @@ lwip_recvfrom(int s, void *mem, int len, unsigned int flags,
     ip_addr_debug_print(SOCKETS_DEBUG, addr);
     LWIP_DEBUGF(SOCKETS_DEBUG, (" port=%u len=%u\n", port, copylen));
   } else {
-#if SOCKETS_DEBUG > 0
+#if SOCKETS_DEBUG
     addr = netbuf_fromaddr(buf);
     port = netbuf_fromport(buf);
 
@@ -995,7 +998,7 @@ int lwip_getsockopt (int s, int level, int optname, void *optval, socklen_t *opt
       /* UNIMPL case SO_SNDBUF: */
       /* UNIMPL case SO_RCVLOWAT: */
       /* UNIMPL case SO_SNDLOWAT: */
-#ifdef SO_REUSE
+#if SO_REUSE
       case SO_REUSEADDR:
       case SO_REUSEPORT:
 #endif /* SO_REUSE */
@@ -1081,7 +1084,7 @@ int lwip_getsockopt (int s, int level, int optname, void *optval, socklen_t *opt
     /* UNIMPL case SO_DONTROUTE: */
     case SO_KEEPALIVE:
     /* UNIMPL case SO_OOBINCLUDE: */
-#ifdef SO_REUSE
+#if SO_REUSE
     case SO_REUSEADDR:
     case SO_REUSEPORT:
 #endif /* SO_REUSE */
@@ -1140,7 +1143,7 @@ int lwip_getsockopt (int s, int level, int optname, void *optval, socklen_t *opt
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_TCP, TCP_NODELAY) = %s\n", s, (*(int*)optval)?"on":"off") );
       break;
     case TCP_KEEPALIVE:
-      *(int*)optval = sock->conn->pcb.tcp->keepalive;
+      *(int*)optval = (int)sock->conn->pcb.tcp->keepalive;
       LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_getsockopt(%d, IPPROTO_IP, TCP_KEEPALIVE) = %d\n", s, *(int *)optval));
       break;
     }  /* switch */
@@ -1184,7 +1187,7 @@ int lwip_setsockopt (int s, int level, int optname, const void *optval, socklen_
     /* UNIMPL case SO_SNDBUF: */
     /* UNIMPL case SO_RCVLOWAT: */
     /* UNIMPL case SO_SNDLOWAT: */
-#ifdef SO_REUSE
+#if SO_REUSE
     case SO_REUSEADDR:
     case SO_REUSEPORT:
 #endif /* SO_REUSE */
@@ -1266,7 +1269,7 @@ int lwip_setsockopt (int s, int level, int optname, const void *optval, socklen_
     /* UNIMPL case SO_DONTROUTE: */
     case SO_KEEPALIVE:
     /* UNIMPL case SO_OOBINCLUDE: */
-#ifdef SO_REUSE
+#if SO_REUSE
     case SO_REUSEADDR:
     case SO_REUSEPORT:
 #endif /* SO_REUSE */
@@ -1308,7 +1311,7 @@ int lwip_setsockopt (int s, int level, int optname, const void *optval, socklen_
       break;
     case TCP_KEEPALIVE:
       sock->conn->pcb.tcp->keepalive = (u32_t)(*(int*)optval);
-      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_TCP, TCP_KEEPALIVE) -> %u\n", s, sock->conn->pcb.tcp->keepalive));
+      LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_setsockopt(%d, IPPROTO_TCP, TCP_KEEPALIVE) -> %lu\n", s, sock->conn->pcb.tcp->keepalive));
       break;
     }  /* switch */
     break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -38,7 +38,7 @@
 #include "lwip/tcpip.h"
 
 #if LWIP_RAW
-static int
+static u8_t
 recv_raw(void *arg, struct raw_pcb *pcb, struct pbuf *p,
     struct ip_addr *addr)
 {
@@ -325,8 +325,6 @@ do_newconn(struct api_msg_msg *msg)
       setup_tcp(msg->conn);
       break;
 #endif
-    default:  
-      break;
    }
    
   
@@ -577,8 +575,6 @@ do_disconnect(struct api_msg_msg *msg)
 #endif 
   case NETCONN_TCP:
     break;
-  default:
-    break;
   }
   sys_mbox_post(msg->conn->mbox, NULL);
 }
@@ -648,8 +644,6 @@ do_accept(struct api_msg_msg *msg)
 #endif /* LWIP_UDP */
     case NETCONN_TCP:
       break;
-    default:
-      break;
     }
   }
 }
@@ -674,8 +668,6 @@ do_send(struct api_msg_msg *msg)
       break;
 #endif /* LWIP_UDP */
     case NETCONN_TCP:
-      break;
-    default:
       break;
     }
   }
@@ -725,7 +717,7 @@ do_write(struct api_msg_msg *msg)
    segments when new outgoing data arrives from the user if any
    previously transmitted data on the connection remains
    unacknowledged. */
-		if(err == ERR_OK && (msg->conn->pcb.tcp->unacked == NULL || (msg->conn->pcb.tcp->flags & TF_NODELAY)) ) {
+      if(err == ERR_OK && (msg->conn->pcb.tcp->unacked == NULL || (msg->conn->pcb.tcp->flags & TF_NODELAY)) ) {
   tcp_output(msg->conn->pcb.tcp);
       }
       msg->conn->err = err;

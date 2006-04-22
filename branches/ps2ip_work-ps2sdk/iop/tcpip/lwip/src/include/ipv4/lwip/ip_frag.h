@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -38,8 +38,9 @@
 #include "lwip/netif.h"
 #include "lwip/ip_addr.h"
 
-struct pbuf * ip_reass(struct pbuf *);
-err_t ip_frag(struct pbuf *, struct netif *, struct ip_addr *);
+void ip_reass_tmr(void);
+struct pbuf * ip_reass(struct pbuf *p);
+err_t ip_frag(struct pbuf *p, struct netif *netif, struct ip_addr *dest);
 
 #endif /* __LWIP_IP_FRAG_H__ */
 

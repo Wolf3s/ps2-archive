@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -35,8 +35,6 @@
  * drivers for lwIP. Add code to the low_level functions and do a
  * search-and-replace for the word "ethernetif" to replace it with
  * something that better describes your network interface.
- *
- * THIS CODE NEEDS TO BE FIXED - IT IS NOT In SYNC WITH CURRENT ETHARP API
  */
 
 #include "lwip/opt.h"
@@ -44,12 +42,13 @@
 #include "lwip/mem.h"
 #include "lwip/pbuf.h"
 #include "lwip/sys.h"
+#include <lwip/stats.h>
 
-#include "netif/arp.h"
+#include "netif/etharp.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
-#define IFNAME1 't'
+#define IFNAME1 'n'
 
 struct ethernetif {
   struct eth_addr *ethaddr;
@@ -63,13 +62,10 @@ static void  ethernetif_input(struct netif *netif);
 static err_t ethernetif_output(struct netif *netif, struct pbuf *p,
              struct ip_addr *ipaddr);
 
-
 static void
 low_level_init(struct netif *netif)
 {
-  struct ethernetif *ethernetif;
-
-  ethernetif = netif->state;
+  struct ethernetif *ethernetif = netif->state;
   
   /* set MAC hardware address length */
   netif->hwaddr_len = 6;
@@ -77,7 +73,7 @@ low_level_init(struct netif *netif)
   /* set MAC hardware address */
   netif->hwaddr[0] = ;
   ...
-  netif->hwaddr[6] = ;
+  netif->hwaddr[5] = ;
 
   /* maximum transfer unit */
   netif->mtu = 1500;
@@ -97,14 +93,18 @@ low_level_init(struct netif *netif)
  *
  */
 
-
 static err_t
-low_level_output(struct ethernetif *ethernetif, struct pbuf *p)
+low_level_output(struct netif *netif, struct pbuf *p)
 {
+  struct ethernetif *ethernetif = netif->state;
   struct pbuf *q;
 
   initiate transfer();
   
+#if ETH_PAD_SIZE
+  pbuf_header(p, -ETH_PAD_SIZE);			/* drop the padding word */
+#endif
+
   for(q = p; q != NULL; q = q->next) {
     /* Send the data from the pbuf to the interface, one pbuf at a
        time. The size of the data in each pbuf is kept in the ->len
@@ -113,8 +113,12 @@ low_level_output(struct ethernetif *ethernetif, struct pbuf *p)
   }
 
   signal that packet should be sent();
+
+#if ETH_PAD_SIZE
+  pbuf_header(p, ETH_PAD_SIZE);			/* reclaim the padding word */
+#endif
   
-#ifdef LINK_STATS
+#if LINK_STATS
   lwip_stats.link.xmit++;
 #endif /* LINK_STATS */      
 
@@ -130,8 +134,9 @@ low_level_output(struct ethernetif *ethernetif, struct pbuf *p)
  */
 
 static struct pbuf *
-low_level_input(struct ethernetif *ethernetif)
+low_level_input(struct netif *netif)
 {
+  struct ethernetif *ethernetif = netif->state;
   struct pbuf *p, *q;
   u16_t len;
 
@@ -139,25 +144,39 @@ low_level_input(struct ethernetif *ethernetif)
      variable. */
   len = ;
 
+#if ETH_PAD_SIZE
+  len += ETH_PAD_SIZE;						/* allow room for Ethernet padding */
+#endif
+
   /* We allocate a pbuf chain of pbufs from the pool. */
   p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
   
   if (p != NULL) {
+
+#if ETH_PAD_SIZE
+    pbuf_header(p, -ETH_PAD_SIZE);			/* drop the padding word */
+#endif
+
     /* We iterate over the pbuf chain until we have read the entire
-       packet into the pbuf. */
+     * packet into the pbuf. */
     for(q = p; q != NULL; q = q->next) {
       /* Read enough bytes to fill this pbuf in the chain. The
-         available data in the pbuf is given by the q->len
-         variable. */
+       * available data in the pbuf is given by the q->len
+       * variable. */
       read data into(q->payload, q->len);
     }
     acknowledge that packet has been read();
-#ifdef LINK_STATS
+
+#if ETH_PAD_SIZE
+    pbuf_header(p, ETH_PAD_SIZE);			/* reclaim the padding word */
+#endif
+
+#if LINK_STATS
     lwip_stats.link.recv++;
 #endif /* LINK_STATS */      
   } else {
     drop packet();
-#ifdef LINK_STATS
+#if LINK_STATS
     lwip_stats.link.memerr++;
     lwip_stats.link.drop++;
 #endif /* LINK_STATS */      
@@ -171,7 +190,7 @@ low_level_input(struct ethernetif *ethernetif)
  *
  * This function is called by the TCP/IP stack when an IP packet
  * should be sent. It calls the function called low_level_output() to
- * do the actuall transmission of the packet.
+ * do the actual transmission of the packet.
  *
  */
 
@@ -179,90 +198,10 @@ static err_t
 ethernetif_output(struct netif *netif, struct pbuf *p,
       struct ip_addr *ipaddr)
 {
-  struct ethernetif *ethernetif;
-  struct pbuf *q;
-  struct eth_hdr *ethhdr;
-  struct eth_addr *dest, mcastaddr;
-  struct ip_addr *queryaddr;
-  err_t err;
-  u8_t i;
   
-  ethernetif = netif->state;
-
-  /* Make room for Ethernet header. */
-  if (pbuf_header(p, 14) != 0) {
-    /* The pbuf_header() call shouldn't fail, but we allocate an extra
-       pbuf just in case. */
-    q = pbuf_alloc(PBUF_LINK, 14, PBUF_RAM);
-    if (q == NULL) {
-#ifdef LINK_STATS
-      lwip_stats.link.drop++;
-      lwip_stats.link.memerr++;
-#endif /* LINK_STATS */      
-      return ERR_MEM;
-    }
-    pbuf_chain(q, p);
-    p = q;
-  }
-
-  /* Construct Ethernet header. Start with looking up deciding which
-     MAC address to use as a destination address. Broadcasts and
-     multicasts are special, all other addresses are looked up in the
-     ARP table. */
-  queryaddr = ipaddr;
-  if (ip_addr_isany(ipaddr) ||
-     ip_addr_isbroadcast(ipaddr, &(netif->netmask))) {
-    dest = (struct eth_addr *)&ethbroadcast;
-  } else if (ip_addr_ismulticast(ipaddr)) {
-    /* Hash IP multicast address to MAC address. */
-    mcastaddr.addr[0] = 0x01;
-    mcastaddr.addr[1] = 0x0;
-    mcastaddr.addr[2] = 0x5e;
-    mcastaddr.addr[3] = ip4_addr2(ipaddr) & 0x7f;
-    mcastaddr.addr[4] = ip4_addr3(ipaddr);
-    mcastaddr.addr[5] = ip4_addr4(ipaddr);
-    dest = &mcastaddr;
-  } else {
-
-    if (ip_addr_maskcmp(ipaddr, &(netif->ip_addr), &(netif->netmask))) {
-      /* Use destination IP address if the destination is on the same
-         subnet as we are. */
-      queryaddr = ipaddr;
-    } else {
-      /* Otherwise we use the default router as the address to send
-         the Ethernet frame to. */
-      queryaddr = &(netif->gw);
-    }
-    dest = arp_lookup(queryaddr);
-  }
-
-
-  /* If the arp_lookup() didn't find an address, we send out an ARP
-     query for the IP address. */
-  if (dest == NULL) {
-    q = arp_query(netif, ethernetif->ethaddr, queryaddr);
-    if (q != NULL) {
-      err = low_level_output(ethernetif, q);
-      pbuf_free(q);
-      return err;
-    }
-#ifdef LINK_STATS
-    lwip_stats.link.drop++;
-    lwip_stats.link.memerr++;
-#endif /* LINK_STATS */          
-    return ERR_MEM;
-  }
-  ethhdr = p->payload;
-
-  for(i = 0; i < 6; i++) {
-    ethhdr->dest.addr[i] = dest->addr[i];
-    ethhdr->src.addr[i] = ethernetif->ethaddr->addr[i];
-  }
-  
-  ethhdr->type = htons(ETHTYPE_IP);
-  
-  return low_level_output(ethernetif, p);
-
+ /* resolve hardware address, then send (or queue) packet */
+  return etharp_output(netif, ipaddr, p);
+ 
 }
 
 /*
@@ -282,43 +221,47 @@ ethernetif_input(struct netif *netif)
   struct eth_hdr *ethhdr;
   struct pbuf *p;
 
-
   ethernetif = netif->state;
   
-  p = low_level_input(ethernetif);
+  /* move received packet into a new pbuf */
+  p = low_level_input(netif);
+  /* no packet could be read, silently ignore this */
+  if (p == NULL) return;
+  /* points to packet payload, which starts with an Ethernet header */
+  ethhdr = p->payload;
 
-  if (p != NULL) {
-
-#ifdef LINK_STATS
-    lwip_stats.link.recv++;
+#if LINK_STATS
+  lwip_stats.link.recv++;
 #endif /* LINK_STATS */
 
-    ethhdr = p->payload;
+  ethhdr = p->payload;
     
-    switch (htons(ethhdr->type)) {
-    case ETHTYPE_IP:
-      arp_ip_input(netif, p);
-      pbuf_header(p, -14);
-      netif->input(p, netif);
-      break;
+  switch (htons(ethhdr->type)) {
+  /* IP packet? */
+  case ETHTYPE_IP:
+    /* update ARP table */
+    etharp_ip_input(netif, p);
+    /* skip Ethernet header */
+    pbuf_header(p, -sizeof(struct eth_hdr));
+    /* pass to network layer */
+    netif->input(p, netif);
+    break;
+      
     case ETHTYPE_ARP:
-      p = arp_arp_input(netif, ethernetif->ethaddr, p);
-      if (p != NULL) {
-  low_level_output(ethernetif, p);
-  pbuf_free(p);
-      }
+      /* pass p to ARP module  */
+      etharp_arp_input(netif, ethernetif->ethaddr, p);
       break;
     default:
       pbuf_free(p);
+      p = NULL;
       break;
-    }
   }
 }
 
 static void
 arp_timer(void *arg)
 {
-  arp_tmr();
+  etharp_tmr();
   sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
 }
 
@@ -331,12 +274,19 @@ arp_timer(void *arg)
  *
  */
 
-void
+err_t
 ethernetif_init(struct netif *netif)
 {
   struct ethernetif *ethernetif;
     
   ethernetif = mem_malloc(sizeof(struct ethernetif));
+  
+  if (ethernetif == NULL)
+  {
+  	LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_init: out of memory\n"));
+  	return ERR_MEM;
+  }
+  
   netif->state = ethernetif;
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;
@@ -346,8 +296,11 @@ ethernetif_init(struct netif *netif)
   ethernetif->ethaddr = (struct eth_addr *)&(netif->hwaddr[0]);
   
   low_level_init(netif);
-  arp_init();
+
+  etharp_init();
 
   sys_timeout(ARP_TMR_INTERVAL, arp_timer, NULL);
+
+  return ERR_OK;
 }
 

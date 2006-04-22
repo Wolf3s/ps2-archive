@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001-2003 Swedish Institute of Computer Science.
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
  * 
  * Redistribution and use in source and binary forms, with or without modification, 
@@ -30,7 +30,6 @@
  *
  */
 
-
 #include "lwip/opt.h"
 
 #include "lwip/def.h"
@@ -47,5 +46,68 @@ stats_init(void)
 {
   memset(&lwip_stats, 0, sizeof(struct stats_));
 }
+#if LWIP_STATS_DISPLAY
+void
+stats_display_proto(struct stats_proto *proto, char *name)
+{
+  LWIP_PLATFORM_DIAG(("\n%s\n\t", name));
+  LWIP_PLATFORM_DIAG(("xmit: %"S16_F"\n\t", proto->xmit)); 
+  LWIP_PLATFORM_DIAG(("rexmit: %"S16_F"\n\t", proto->rexmit)); 
+  LWIP_PLATFORM_DIAG(("recv: %"S16_F"\n\t", proto->recv)); 
+  LWIP_PLATFORM_DIAG(("fw: %"S16_F"\n\t", proto->fw)); 
+  LWIP_PLATFORM_DIAG(("drop: %"S16_F"\n\t", proto->drop)); 
+  LWIP_PLATFORM_DIAG(("chkerr: %"S16_F"\n\t", proto->chkerr)); 
+  LWIP_PLATFORM_DIAG(("lenerr: %"S16_F"\n\t", proto->lenerr)); 
+  LWIP_PLATFORM_DIAG(("memerr: %"S16_F"\n\t", proto->memerr)); 
+  LWIP_PLATFORM_DIAG(("rterr: %"S16_F"\n\t", proto->rterr)); 
+  LWIP_PLATFORM_DIAG(("proterr: %"S16_F"\n\t", proto->proterr)); 
+  LWIP_PLATFORM_DIAG(("opterr: %"S16_F"\n\t", proto->opterr)); 
+  LWIP_PLATFORM_DIAG(("err: %"S16_F"\n\t", proto->err)); 
+  LWIP_PLATFORM_DIAG(("cachehit: %"S16_F"\n", proto->cachehit)); 
+}
+
+void
+stats_display_pbuf(struct stats_pbuf *pbuf)
+{
+  LWIP_PLATFORM_DIAG(("\nPBUF\n\t"));
+  LWIP_PLATFORM_DIAG(("avail: %"S16_F"\n\t", pbuf->avail)); 
+  LWIP_PLATFORM_DIAG(("used: %"S16_F"\n\t", pbuf->used)); 
+  LWIP_PLATFORM_DIAG(("max: %"S16_F"\n\t", pbuf->max)); 
+  LWIP_PLATFORM_DIAG(("err: %"S16_F"\n\t", pbuf->err)); 
+  LWIP_PLATFORM_DIAG(("alloc_locked: %"S16_F"\n\t", pbuf->alloc_locked)); 
+  LWIP_PLATFORM_DIAG(("refresh_locked: %"S16_F"\n", pbuf->refresh_locked)); 
+}
+
+void
+stats_display_mem(struct stats_mem *mem, char *name)
+{
+  LWIP_PLATFORM_DIAG(("\n MEM %s\n\t", name));
+  LWIP_PLATFORM_DIAG(("avail: %"S16_F"\n\t", mem->avail)); 
+  LWIP_PLATFORM_DIAG(("used: %"S16_F"\n\t", mem->used)); 
+  LWIP_PLATFORM_DIAG(("max: %"S16_F"\n\t", mem->max)); 
+  LWIP_PLATFORM_DIAG(("err: %"S16_F"\n", mem->err));
+  
+}
+
+void
+stats_display(void)
+{
+  s16_t i;
+  char * memp_names[] = {"PBUF", "RAW_PCB", "UDP_PCB", "TCP_PCB", "TCP_PCB_LISTEN",
+	  		"TCP_SEG", "NETBUF", "NETCONN", "API_MSG", "TCP_MSG", "TIMEOUT"};
+  stats_display_proto(&lwip_stats.link, "LINK");
+  stats_display_proto(&lwip_stats.ip_frag, "IP_FRAG");
+  stats_display_proto(&lwip_stats.ip, "IP");
+  stats_display_proto(&lwip_stats.icmp, "ICMP");
+  stats_display_proto(&lwip_stats.udp, "UDP");
+  stats_display_proto(&lwip_stats.tcp, "TCP");
+  stats_display_pbuf(&lwip_stats.pbuf);
+  stats_display_mem(&lwip_stats.mem, "HEAP");
+  for (i = 0; i < MEMP_MAX; i++) {
+    stats_display_mem(&lwip_stats.memp[i], memp_names[i]);
+  }
+	
+}
+#endif /* LWIP_STATS_DISPLAY */
 #endif /* LWIP_STATS */
 
