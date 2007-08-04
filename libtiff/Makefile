@@ -31,7 +31,7 @@ EE_OBJS = \
 	tif_write.o
 
 EE_CFLAGS = -msingle-float
-EE_INCS = -I$(LIBTIFF)
+EE_INCS = -I./
 EE_LIB = libtiff.a
 
 all:	$(EE_LIB)
